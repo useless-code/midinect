@@ -2,12 +2,20 @@
 import freenect
 import cv2
 import numpy
+import sys
 
 threshold = 100
 current_depth = 0
+prev = None
 
 cv2.namedWindow('Original')
 cv2.namedWindow('Mapa')
+tilt = 0
+
+
+def change_tilt(value):
+    global tilt
+    tilt = value
 
 def change_threshold(value):
     global threshold
@@ -19,11 +27,19 @@ def change_depth(value):
     current_depth = value
 
 
-def show_depth():
+def show_depth(dev, data, timestamp):
     global threshold
     global current_depth
+    global prev
 
-    source, timestamp = freenect.sync_get_depth()
+    actual = data
+
+    if prev is None:
+        prev = numpy.array(actual)
+
+    source = (actual + prev) / 2
+
+    prev = actual
 
     depth = 255 * numpy.logical_and(
             source >= current_depth - threshold,
@@ -38,6 +54,8 @@ def show_depth():
 
     draw_convex_hull(depth, source)
 
+    if cv2.waitKey(10) == 27:
+        sys.exit()
 
 
 def draw_convex_hull(a, original):
@@ -50,11 +68,11 @@ def draw_convex_hull(a, original):
             cv2.RETR_EXTERNAL,
                 cv2.CHAIN_APPROX_SIMPLE)
 
-    for cnt in contornos:
+    for n, cnt in enumerate(contornos):
 
         hull = cv2.convexHull(cnt)
         foo = cv2.convexHull(cnt, returnPoints=False)
-
+        cv2.drawContours(original, contornos, n, (0, 35, 245))
         if len(cnt) > 3 and len(foo) > 2:
             defectos = cv2.convexityDefects(cnt, foo)
             if defectos is not None:
@@ -64,6 +82,7 @@ def draw_convex_hull(a, original):
                     if d[3] > 20:
                         cv2.circle(original, tuple(puntos[d[0]]), 5, (255, 255, 0), 2)
                         cv2.circle(original, tuple(puntos[d[1]]), 5, (255, 255, 0), 2)
+                        cv2.circle(original, tuple(puntos[d[2]]), 5, (0, 0, 255), 2)
 
         lista = numpy.reshape(hull, (1, -1, 2))
         cv2.polylines(original, lista, True, (0, 255, 0), 3)
@@ -76,9 +95,10 @@ def draw_convex_hull(a, original):
 
 cv2.createTrackbar('threshold', 'Original', threshold,     500,  change_threshold)
 cv2.createTrackbar('depth',     'Original', current_depth, 2048, change_depth)
+cv2.createTrackbar('tilt', 'Original', 0, 30, change_tilt)
 
-while True:
-    show_depth()
-    if cv2.waitKey(10) == 27:
-        break
+def main(dev, ctx):
+    freenect.set_tilt_degs(dev, tilt)
+
+freenect.runloop(depth=show_depth, body=main)
 
