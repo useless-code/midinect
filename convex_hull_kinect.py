@@ -24,6 +24,7 @@ def show_depth():
     global current_depth
 
     source, timestamp = freenect.sync_get_depth()
+
     depth = 255 * numpy.logical_and(
             source >= current_depth - threshold,
             source <= current_depth + threshold)
@@ -41,6 +42,8 @@ def show_depth():
 
 def draw_convex_hull(a, original):
 
+    original = cv2.cvtColor(original, cv2.COLOR_GRAY2BGR)
+
     ret, b = cv2.threshold(a, 255, 255, cv2.THRESH_BINARY)
 
     contornos, jerarquia = cv2.findContours(a,
@@ -48,9 +51,21 @@ def draw_convex_hull(a, original):
                 cv2.CHAIN_APPROX_SIMPLE)
 
     for cnt in contornos:
-        hull = cv2.convexHull(cnt)
-        lista = numpy.reshape(hull, (1, -1, 2))
 
+        hull = cv2.convexHull(cnt)
+        foo = cv2.convexHull(cnt, returnPoints=False)
+
+        if len(cnt) > 3 and len(foo) > 2:
+            defectos = cv2.convexityDefects(cnt, foo)
+            if defectos is not None:
+                defectos = defectos.reshape(-1, 4)
+                puntos = cnt.reshape(-1, 2)
+                for d in defectos:
+                    if d[3] > 20:
+                        cv2.circle(original, tuple(puntos[d[0]]), 5, (255, 255, 0), 2)
+                        cv2.circle(original, tuple(puntos[d[1]]), 5, (255, 255, 0), 2)
+
+        lista = numpy.reshape(hull, (1, -1, 2))
         cv2.polylines(original, lista, True, (0, 255, 0), 3)
         center, radius = cv2.minEnclosingCircle(cnt)
         center = tuple(map(int, center))
