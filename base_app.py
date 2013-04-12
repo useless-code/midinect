@@ -5,7 +5,7 @@ import cv2
 
 class FreenectCv2App(object):
     """Clase base para extender una aplicacion freenect"""
-    def __init__(self, depth, body):
+    def __init__(self):
         self.keep_running = True
 
     def run(self):
@@ -16,7 +16,7 @@ class FreenectCv2App(object):
                 body=self.main
                 )
 
-    def main(self):
+    def main(self, *args):
         if not self.keep_running:
             raise freenect.Kill
 
