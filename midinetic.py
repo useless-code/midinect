@@ -62,15 +62,13 @@ def calcular_distancia(a, b):
 
 def draw_convex_hull(a, original):
 
-    original = cv2.cvtColor(original, cv2.COLOR_GRAY2BGR)
-
     ret, b = cv2.threshold(a, 255, 255, cv2.THRESH_BINARY)
 
     contornos, jerarquia = cv2.findContours(a,
             cv2.RETR_EXTERNAL,
                 cv2.CHAIN_APPROX_SIMPLE)
 
-    mayores = obtener_mayores_contornos(contornos, 2)
+    mayores = obtener_mayores_contornos(contornos, 4)
     puntos = [];
     for n, center, radius in mayores:
 
@@ -113,6 +111,5 @@ def draw_convex_hull(a, original):
         puntos.append(Event(center, radius, box[2]))
 
     eventos = etiquetar_eventos(original, puntos)
-    cv2.imshow('Original', original)
     return eventos
 

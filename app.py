@@ -19,6 +19,8 @@ class Midinetic(FreenectCv2App):
         self.crear_interface()
         self.midi = simplecoremidi.MIDISource('midinetic')
         self.current_notes = {}
+        self.particiones = (6, 4)
+        self.resolucion = (640, 480)
 
     def crear_interface(self):
         cv2.namedWindow('Original')
@@ -41,15 +43,6 @@ class Midinetic(FreenectCv2App):
 
     def display_depth(self, dev, data, timestamp):
 
-        #actual = data
-
-        #if self.prev is None:
-        #    self.prev = numpy.array(actual)
-
-        #source = (actual + self.prev) / 2
-
-        #self.prev = actual
-
         source = data
 
         depth = 255 * numpy.logical_and(
@@ -63,8 +56,14 @@ class Midinetic(FreenectCv2App):
         depth = depth.astype(numpy.uint8)
         source = source.astype(numpy.uint8)
         cv2.imshow('Mapa', depth)
+        source = cv2.cvtColor(source, cv2.COLOR_GRAY2BGR)
+
+        self.draw_grid(source)
 
         eventos = midinetic.draw_convex_hull(depth, source)
+
+        cv2.imshow('Original', source)
+
         self.handle_events(eventos)
         super(Midinetic, self).display_depth(dev, data, timestamp)
 
@@ -86,10 +85,24 @@ class Midinetic(FreenectCv2App):
                 print "apagar nota"
                 #note off
 
+    def draw_grid(self, canvas):
+        w, h = self.resolucion
+        x_partitions, y_partitions = self.particiones
+        delta_w, delta_h = int(w / x_partitions), int(h / y_partitions)
+        color = (0x4f, 0x96, 0x11)
+        for n in xrange(0, x_partitions):
+            x = delta_w * n
+            cv2.line(canvas,(x, 0), (x, h), color, 4)
+        for n in xrange(0, y_partitions):
+            y = delta_h * n
+            cv2.line(canvas,(0, y), (w, y), color, 4)
+       #lineas verticales
+       #lineas horizontales
+
     def get_note_from_position(self, position_tuple):
-        w, h = 640, 480
-        x_partitions = 4
-        y_partitions = 3
+
+        w, h = self.resolucion
+        x_partitions, y_partitions = self.particiones
         delta_w, delta_h = w / x_partitions, h / y_partitions
 
         n = y_partitions * math.floor(position_tuple[1] / delta_h) + math.floor(position_tuple[0] /delta_w)
