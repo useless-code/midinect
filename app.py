@@ -56,7 +56,8 @@ class Midinetic(FreenectCv2App):
                 source >= self.depth - self.threshold,
                 source <= self.depth + self.threshold)
 
-
+        depth = numpy.fliplr(depth)
+        source = numpy.fliplr(source)
         source += 1
         source >>= 3
         depth = depth.astype(numpy.uint8)

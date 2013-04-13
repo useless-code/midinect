@@ -4,6 +4,8 @@ import math
 import uuid
 from event  import Event
 
+from utils import calcular_centroide, dibujar_marcador
+
 prev_blob_state = {}
 
 def obtener_mayores_contornos(contornos, cantidad=4):
@@ -73,6 +75,8 @@ def draw_convex_hull(a, original):
     for n, center, radius in mayores:
 
         cnt = contornos[n]
+        centro = calcular_centroide(cnt)
+        dibujar_marcador(original, centro, (0, 0, 255))
         if radius < 30:
             continue
 
@@ -98,6 +102,7 @@ def draw_convex_hull(a, original):
         cv2.ellipse(original, box, (255,255,0), 4)
 
         center = tuple(map(int, center))
+        dibujar_marcador(original, center, (0, 255, 0))
         radius = int(radius)
         cv2.circle(original, center, radius, (255, 0, 0), 3)
         # Valores a devolver:
